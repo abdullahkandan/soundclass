@@ -5,6 +5,12 @@ import nltk
 from nltk.stem import PorterStemmer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from groq import Groq
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY")
 
 nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
@@ -45,7 +51,6 @@ html, body, [class*="css"], .stApp {
 ::-webkit-scrollbar-track { background: var(--navy); }
 ::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 2px; }
 
-/* Masthead */
 .soundclass-masthead {
     border-bottom: 3px double var(--offwhite-dim);
     padding: 2.5rem 0 1.5rem;
@@ -95,7 +100,6 @@ html, body, [class*="css"], .stApp {
     font-size: 1.1rem;
 }
 
-/* Search area */
 .search-label {
     font-family: 'Source Serif 4', serif;
     font-size: 0.6rem;
@@ -104,6 +108,18 @@ html, body, [class*="css"], .stApp {
     color: var(--offwhite-muted);
     margin-bottom: 0.5rem;
     display: block;
+}
+
+.mode-label {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin: 1.5rem 0 0.5rem;
+    display: block;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--navy-border);
 }
 
 [data-testid="stTextInput"] input {
@@ -127,11 +143,8 @@ html, body, [class*="css"], .stApp {
     color: var(--offwhite-muted) !important;
     font-style: italic !important;
 }
-[data-testid="stTextInput"] label {
-    display: none !important;
-}
+[data-testid="stTextInput"] label { display: none !important; }
 
-/* Selectbox */
 [data-testid="stSelectbox"] > div > div {
     background: var(--navy-mid) !important;
     border: 1px solid var(--navy-border) !important;
@@ -148,7 +161,6 @@ html, body, [class*="css"], .stApp {
     font-family: 'Source Serif 4', serif !important;
 }
 
-/* Buttons */
 [data-testid="stButton"] button {
     background: var(--offwhite) !important;
     color: var(--navy) !important;
@@ -168,7 +180,6 @@ html, body, [class*="css"], .stApp {
     color: var(--navy) !important;
 }
 
-/* Result cards */
 .result-header {
     font-family: 'Source Serif 4', serif;
     font-size: 0.58rem;
@@ -225,7 +236,6 @@ html, body, [class*="css"], .stApp {
     color: var(--offwhite-muted);
 }
 
-/* Input song display */
 .input-song-display {
     background: var(--navy-light);
     border: 1px solid var(--navy-border);
@@ -257,7 +267,29 @@ html, body, [class*="css"], .stApp {
     margin-top: 0.3rem;
 }
 
-/* Stats bar */
+.ai-insight-box {
+    background: var(--navy-mid);
+    border: 1px solid var(--navy-border);
+    border-left: 3px solid var(--gold);
+    padding: 1.25rem 1.5rem;
+    margin: 1rem 0;
+    font-family: 'Source Serif 4', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--offwhite-dim);
+    line-height: 1.75;
+}
+.ai-insight-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-style: normal;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-family: 'Source Serif 4', serif;
+}
+
 .stats-bar {
     display: flex;
     gap: 2rem;
@@ -266,9 +298,7 @@ html, body, [class*="css"], .stApp {
     border-bottom: 1px solid var(--navy-border);
     margin: 1rem 0;
 }
-.stat-item {
-    text-align: center;
-}
+.stat-item { text-align: center; }
 .stat-number {
     font-family: 'Playfair Display', serif;
     font-size: 1.6rem;
@@ -287,7 +317,6 @@ html, body, [class*="css"], .stApp {
     display: block;
 }
 
-/* Alert / info */
 [data-testid="stAlert"] {
     background: var(--navy-mid) !important;
     border: 1px solid var(--navy-border) !important;
@@ -296,12 +325,8 @@ html, body, [class*="css"], .stApp {
     color: var(--offwhite) !important;
 }
 
-/* Spinner */
-[data-testid="stSpinner"] > div {
-    border-top-color: var(--gold) !important;
-}
+[data-testid="stSpinner"] > div { border-top-color: var(--gold) !important; }
 
-/* Dropdown */
 [data-baseweb="popover"] ul,
 [data-baseweb="menu"] {
     background: var(--navy-mid) !important;
@@ -311,13 +336,17 @@ html, body, [class*="css"], .stApp {
 [data-baseweb="menu"] li { color: var(--offwhite) !important; font-family: 'Source Serif 4', serif !important; }
 [data-baseweb="menu"] li:hover { background: var(--navy-light) !important; }
 
+[data-testid="stRadio"] label {
+    color: var(--offwhite) !important;
+    font-family: 'Source Serif 4', serif !important;
+    font-size: 0.85rem !important;
+}
+
 @keyframes fade-in {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
 }
-.animate-in {
-    animation: fade-in 0.4s ease forwards;
-}
+.animate-in { animation: fade-in 0.4s ease forwards; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -353,10 +382,8 @@ def load_data_and_model():
             return txt.lower()
 
     df["processed"] = df["text"].apply(tokenize)
-
     vectorizer = TfidfVectorizer(analyzer="word", stop_words="english", max_features=8000)
     tfidf_matrix = vectorizer.fit_transform(df["processed"])
-
     return df, vectorizer, tfidf_matrix
 
 def recommend(song_name, df, vectorizer, tfidf_matrix, n=9):
@@ -382,8 +409,54 @@ def recommend(song_name, df, vectorizer, tfidf_matrix, n=9):
             "score": round(float(scores[i]), 3)
         })
 
-    input_song = df.iloc[idx]
-    return results, input_song
+    return results, df.iloc[idx]
+
+def mood_to_song(description, df):
+    client = Groq(api_key=GROQ_API_KEY)
+    song_list = df[["song", "artist"]].drop_duplicates().head(300)
+    songs_text = "\n".join([f"{r['song']} by {r['artist']}" for _, r in song_list.iterrows()])
+
+    prompt = f"""You are a music expert with deep knowledge of song lyrics and themes.
+
+A user has described what they want to listen to:
+"{description}"
+
+Here is a sample of songs available in the archive:
+{songs_text}
+
+Your task: pick the ONE song from this list that best matches the user's description based on likely lyrical themes, mood, and emotional content. Return ONLY the exact song title as it appears in the list, nothing else. No explanation, no artist name, just the song title."""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=30
+    )
+    return response.choices[0].message.content.strip()
+
+def explain_recommendations(input_song, results, description=None):
+    client = Groq(api_key=GROQ_API_KEY)
+    result_list = "\n".join([f"{r['song']} by {r['artist']}" for r in results[:5]])
+
+    if description:
+        context = f'The user described: "{description}". This led to the anchor song: "{input_song["song"]}" by {input_song["artist"]}.'
+    else:
+        context = f'The user searched for: "{input_song["song"]}" by {input_song["artist"]}.'
+
+    prompt = f"""You are Soundclass, a lyrical intelligence engine.
+
+{context}
+
+The top 5 recommendations are:
+{result_list}
+
+In 3-4 sentences, explain what lyrical or thematic thread connects these songs to the anchor track. Be specific about themes, mood, or imagery. Write in a refined, editorial tone."""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=200
+    )
+    return response.choices[0].message.content.strip()
 
 df, vectorizer, tfidf_matrix = load_data_and_model()
 
@@ -410,56 +483,87 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Search ────────────────────────────────────────────────────────────────────
-st.markdown('<span class="search-label">Search by Song Title</span>', unsafe_allow_html=True)
+# ── Search Mode Toggle ────────────────────────────────────────────────────────
+st.markdown('<span class="mode-label">Search Mode</span>', unsafe_allow_html=True)
+mode = st.radio("mode", ["Search by song title", "Describe a mood or feeling"], label_visibility="collapsed", horizontal=True)
 
-col_input, col_btn = st.columns([5, 1])
-with col_input:
-    song_input = st.text_input("song", placeholder="e.g. Waiting For The Man, Bohemian Rhapsody...", label_visibility="collapsed")
-with col_btn:
-    st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
-    search = st.button("Find")
+song_input = ""
+mood_input = ""
+search = False
+description_used = None
 
-# ── Browse by Artist ──────────────────────────────────────────────────────────
-st.markdown("<div style='margin-top:1.5rem'>", unsafe_allow_html=True)
-artists = sorted(df["artist"].unique().tolist())
-selected_artist = st.selectbox("Browse by Artist", ["— Select an artist —"] + artists)
+if mode == "Search by song title":
+    st.markdown('<span class="search-label">Song Title</span>', unsafe_allow_html=True)
+    col_input, col_btn = st.columns([5, 1])
+    with col_input:
+        song_input = st.text_input("song", placeholder="e.g. Bohemian Rhapsody, Waiting For The Man...", label_visibility="collapsed")
+    with col_btn:
+        st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
+        search = st.button("Find")
 
-if selected_artist != "— Select an artist —":
-    artist_songs = df[df["artist"] == selected_artist]["song"].tolist()
-    selected_song = st.selectbox("Select a song", ["— Select a song —"] + artist_songs)
-    if selected_song != "— Select a song —":
-        song_input = selected_song
-        search = True
+    st.markdown("<div style='margin-top:1.5rem'>", unsafe_allow_html=True)
+    artists = sorted(df["artist"].unique().tolist())
+    selected_artist = st.selectbox("Browse by Artist", ["— Select an artist —"] + artists)
+    if selected_artist != "— Select an artist —":
+        artist_songs = df[df["artist"] == selected_artist]["song"].tolist()
+        selected_song = st.selectbox("Select a song", ["— Select a song —"] + artist_songs)
+        if selected_song != "— Select a song —":
+            song_input = selected_song
+            search = True
+    st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)
+else:
+    st.markdown('<span class="search-label">Describe What You Want to Hear</span>', unsafe_allow_html=True)
+    col_input, col_btn = st.columns([5, 1])
+    with col_input:
+        mood_input = st.text_input("mood", placeholder="e.g. something melancholic about lost love and empty streets...", label_visibility="collapsed")
+    with col_btn:
+        st.markdown("<div style='height:0.1rem'></div>", unsafe_allow_html=True)
+        search = st.button("Find")
 
 # ── Results ───────────────────────────────────────────────────────────────────
-if (search or song_input) and song_input.strip():
-    with st.spinner("Searching the archive..."):
-        results, input_song = recommend(song_input.strip(), df, vectorizer, tfidf_matrix)
+if search:
+    if mode == "Describe a mood or feeling" and mood_input.strip():
+        with st.spinner("Finding the right song for your mood..."):
+            matched_title = mood_to_song(mood_input.strip(), df)
+            song_input = matched_title
+            description_used = mood_input.strip()
 
-    if results is None:
-        st.error(f'No song matching "{song_input}" found in the archive. Try a different title.')
-    else:
-        st.markdown(f"""
-        <div class="input-song-display animate-in">
-            <div class="input-song-label">Now Playing</div>
-            <div class="input-song-name">{input_song['song']}</div>
-            <div class="input-song-artist">{input_song['artist']}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    if song_input.strip():
+        with st.spinner("Searching the archive..."):
+            results, input_song = recommend(song_input.strip(), df, vectorizer, tfidf_matrix)
 
-        st.markdown('<div class="result-header">Recommended Tracks</div>', unsafe_allow_html=True)
-
-        for i, r in enumerate(results, 1):
+        if results is None:
+            st.error(f'No song matching "{song_input}" found in the archive. Try a different title.')
+        else:
             st.markdown(f"""
-            <div class="song-card animate-in">
-                <span class="song-card-number">0{i}</span>
-                <span class="song-card-title">{r['song']}</span>
-                <span class="song-card-artist">{r['artist']}</span>
+            <div class="input-song-display animate-in">
+                <div class="input-song-label">{'Matched From Your Mood' if description_used else 'Now Playing'}</div>
+                <div class="input-song-name">{input_song['song']}</div>
+                <div class="input-song-artist">{input_song['artist']}</div>
             </div>
             """, unsafe_allow_html=True)
+
+            with st.spinner("Analyzing lyrical connections..."):
+                insight = explain_recommendations(input_song, results, description_used)
+
+            st.markdown(f"""
+            <div class="ai-insight-box animate-in">
+                <span class="ai-insight-label">✦ Soundclass Intelligence</span>
+                {insight}
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown('<div class="result-header">Recommended Tracks</div>', unsafe_allow_html=True)
+
+            for i, r in enumerate(results, 1):
+                st.markdown(f"""
+                <div class="song-card animate-in">
+                    <span class="song-card-number">0{i}</span>
+                    <span class="song-card-title">{r['song']}</span>
+                    <span class="song-card-artist">{r['artist']}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
@@ -473,7 +577,7 @@ st.markdown("""
 ">
     <span style="font-family:'Playfair Display',serif; font-style:italic; font-size:1rem; color:#8A8070;">Soundclass</span>
     <span style="font-family:'Source Serif 4',serif; font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:#8A8070;">
-        Lyrics Intelligence &nbsp;·&nbsp; TF-IDF Cosine Similarity
+        Lyrics Intelligence &nbsp;·&nbsp; TF-IDF + Groq Llama 3.3
     </span>
 </div>
 """, unsafe_allow_html=True)
